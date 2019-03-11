@@ -51,7 +51,7 @@ let controller = {
 
         var opts = {
             userId: req.session.userId,
-            programName: req.params.programName
+            program_name: req.params.programName
         }
         
         return Program.getProgram(opts).then(function(response) {

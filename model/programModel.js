@@ -153,7 +153,7 @@ Program.getProgramDetails = function getProgramDetails(opts) {
     var dbWhere = {
         u_id : userId,
         is_active : 1,
-        program_name : opts.programName,
+        program_name : opts.program_name,
     }
     return Promise.using(getSqlConnection(), function(connection) {
         return connection.query(
