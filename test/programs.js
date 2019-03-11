@@ -1,12 +1,8 @@
-const chai = require('chai');
-const chaiHttp = require('chai-http');
 const expect = require('chai').expect;
 const getAllPrograms = require('../model/programModel').getAllPrograms;
 const getProgram = require('../model/programModel').getProgram;
 const createProgram = require('../model/programModel').create;
 const deleteProgram = require('../model/programModel').setInactive;
-
-chai.use(chaiHttp);
 
 var commonObj = {};
 
