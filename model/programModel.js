@@ -10,11 +10,11 @@ var Program = function(program){
 };
 
 /**
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object params]
  * @return {Object} promise [JSON with success, msg & data]
  */
-Program.getAllPrograms = function getAllPrograms(req) {
-    return Program.getProgramsQuery(req)
+Program.getAllPrograms = function getAllPrograms(opts) {
+    return Program.getProgramsQuery(opts)
         .then(function(rows) {
             if(rows.length == 0) {
                 return Promise.resolve({
@@ -35,11 +35,11 @@ Program.getAllPrograms = function getAllPrograms(req) {
 };
 
 /**
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object parameters]
  * @return {Object} promise [JSON with success, msg & data]
  */
-Program.getProgram = function getProgram(req) {
-    return Program.getProgramDetails(req)
+Program.getProgram = function getProgram(opts) {
+    return Program.getProgramDetails(opts)
         .then(function(rows) {
             if(rows.length == 0) {
                 return Promise.resolve({
@@ -62,11 +62,11 @@ Program.getProgram = function getProgram(req) {
 
 
 /**
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object parameters]
  * @return {Object} promise [JSON with success, msg & data]
  */
-Program.updateProgram = function updateProgram(req) {
-    return Program.updateProgramQuery(req)
+Program.updateProgram = function updateProgram(opts) {
+    return Program.updateProgramQuery(opts)
         .then(function(rows) {
             return ({
                 success: true,
@@ -82,48 +82,49 @@ Program.updateProgram = function updateProgram(req) {
 
 
 /**
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object paramters]
  * @return {Object} promise [JSON with success , msg]
  */
-Program.create = function create(req) {
-    return Program.findProgramExists(req.body.program_name)
+Program.create = function create(opts) {
+    return Program.findProgramExists(opts.program_name)
         .then(function(rows) {
-            return Program.createProgramQuery(req);
+            return Program.createProgramQuery(opts);
         }).catch(function(err) {
             return Promise.reject(err);
         });
 };
 
 /** Set a Program as inactive. Inactive programs won't be listed
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object parameters]
  * @return {Object} promise [JSON with success , msg]
  */
-Program.setInactive = function setInactive(req) {
-    return Program.findProgramForDeletion(req.body.program_name)
+Program.setInactive = function setInactive(opts) {
+    return Program.findProgramForDeletion(opts.program_name)
         .then(function(rows) {
-            return Program.deleteProgramQuery(req)
+            return Program.deleteProgramQuery(opts)
         }).catch(function(err) {
             return Promise.reject(err);
         });
 }
 
 /** Query method to fetch programs based on dates
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object paramters]
  * @return {Object} promise [JSON with success , msg]
  */
-Program.getProgramsQuery = function getProgramsQuery(req) {
-    var userId = req.session.userId,
-        opts = req.query,
+Program.getProgramsQuery = function getProgramsQuery(opts) {
+    var userId = opts.userId,
         query,
         db = nconf.get('db_program_details'),
         dbWhere = {
             u_id : userId,
-            is_active : 1,
-            program_startDate: Math.floor(new Date(opts.program_startdate).getTime() / 1000),
-            program_endDate: Math.floor(new Date(opts.program_enddate).getTime() / 1000)
-        }
+            is_active : 1
+        };
 
+        
     if(opts.program_startdate && opts.program_enddate) {
+        dbWhere.program_startDate=  Math.floor(new Date(opts.program_startdate).getTime() / 1000);
+        dbWhere.program_endDate= Math.floor(new Date(opts.program_enddate).getTime() / 1000);
+
         query = `select p_id, program_name, program_desc, is_active, program_startdate, program_enddate, u_id
         from ${db} where u_id = ${dbWhere.u_id} AND is_active = ${dbWhere.is_active} 
         AND program_startDate BETWEEN ${dbWhere.program_startDate} AND ${dbWhere.program_endDate} 
@@ -143,16 +144,16 @@ Program.getProgramsQuery = function getProgramsQuery(req) {
 
 
 /** Query method to fetch programs details for a single program
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object paramters]
  * @return {Object} promise 
  */
-Program.getProgramDetails = function getProgramDetails(req) {
-    var userId = req.session.userId;
+Program.getProgramDetails = function getProgramDetails(opts) {
+    var userId = opts.userId;
     var db = nconf.get('db_program_details');
     var dbWhere = {
         u_id : userId,
         is_active : 1,
-        program_name : req.params.programName,
+        program_name : opts.programName,
     }
     return Promise.using(getSqlConnection(), function(connection) {
         return connection.query(
@@ -168,7 +169,7 @@ Program.getProgramDetails = function getProgramDetails(req) {
 }
 
 /** Query method to check if program exists
- * @param  {Object} req [API request object]
+ * @param "string" program_name [program name string]
  * @return {Object} promise
  */
 Program.findProgramExists = function findProgramExists(program_name) {
@@ -195,7 +196,7 @@ Program.findProgramExists = function findProgramExists(program_name) {
 }
 
 /** Query method to fetch programs by program name
- * @param  {Object} req [API request object]
+ * @param  "String" program_name [Program Name]
  * @return {Object} promise 
  */
 Program.findProgramForDeletion = function findProgramForDeletion(program_name) {
@@ -222,19 +223,18 @@ Program.findProgramForDeletion = function findProgramForDeletion(program_name) {
 }
 
 /** Query method to create new programs
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object paramters]
  * @return {Object} promise 
  */
-Program.createProgramQuery = function createProgramQuery(req) {
+Program.createProgramQuery = function createProgramQuery(opts) {
     var db = nconf.get('db_program_details');
-    var opts = req.body;
     var dbInsert = {
         program_name: opts.program_name,
         program_desc: opts.program_desc,
         program_startdate: opts.program_startDate,
         program_enddate: opts.program_endDate,
         is_active: 1,
-        u_id: req.session.userId,
+        u_id: opts.userId,
     };
 
     return Promise.using(getSqlConnection(), function(connection) {
@@ -248,18 +248,17 @@ Program.createProgramQuery = function createProgramQuery(req) {
 }
 
 /** Query method to set programs as inactive
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API parameters]
  * @return {Object} promise 
  */
-Program.deleteProgramQuery = function deleteProgramQuery(req) {
+Program.deleteProgramQuery = function deleteProgramQuery(opts) {
     var db = nconf.get('db_program_details');
-    var opts = req.body;
     var dbSet = {
         is_active : 0
     };
 
     var dbWhere = {
-        u_id: req.session.userId,
+        u_id: opts.userId,
         program_name: opts.program_name
     }
 
@@ -277,12 +276,11 @@ Program.deleteProgramQuery = function deleteProgramQuery(req) {
 }
 
 /** Query method to update program details
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API paramters]
  * @return {Object} promise 
  */
-Program.updateProgramQuery = function updateProgramQuery(req) {
+Program.updateProgramQuery = function updateProgramQuery(opts) {
     var db = nconf.get('db_program_details');
-    var opts = req.body;
     var dbSet = {
         program_name: opts.program_name,
         program_desc: opts.program_desc,
@@ -291,7 +289,7 @@ Program.updateProgramQuery = function updateProgramQuery(req) {
     };
 
     var dbWhere = {
-        u_id: req.session.userId,
+        u_id: opts.userId,
         p_id: opts.p_id,
     }
     

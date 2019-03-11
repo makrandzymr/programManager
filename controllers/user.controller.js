@@ -9,15 +9,15 @@ let controller = {
      * @return {Object} response 
      */
     login: function(req, res) {
-        const { username, password } = req.body
-        if(!username || !password) {
+        var opts = req.body;
+        if(!opts.username || !opts.password) {
             return res.send({
                 success: false,
                 msg: 'invalid credentials'
             });
         }
         
-        return User.login(req).then(function(response) {
+        return User.login(opts).then(function(response) {
             req.session.userId = response.id;
             return res.render('dashboard', {response: response});
         }).catch(function(err) {
@@ -49,7 +49,7 @@ let controller = {
             });
         }
 
-        return User.register(req).then(function(response) {
+        return User.register(opts).then(function(response) {
             return res.send(200, response);
         }).catch(function(err) {
             return res.send(err);

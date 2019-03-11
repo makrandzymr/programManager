@@ -10,13 +10,13 @@ var User = function(user){
 };
 
 /** User Login functionality
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object parameters]
  * @return {Object} promise 
  */
-User.login = function login(req) {
-    return User.findByUsername(req)
+User.login = function login(opts) {
+    return User.findByUsername(opts)
         .then(function(response) {
-            if(response.username && response.password && req.body.password === response.password) {
+            if(response.username && response.password && opts.password === response.password) {
                 return Promise.resolve({
                     msg:'login successful',
                     success: true,
@@ -34,11 +34,11 @@ User.login = function login(req) {
 };
 
 /** User Register functionality
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object paramters]
  * @return {Object} promise 
  */
-User.register = function register(req) {
-    return User.insertUserQuery(req)
+User.register = function register(opts) {
+    return User.insertUserQuery(opts)
         .then(function(rows) {
             var response = {
                 success: true,
@@ -53,18 +53,18 @@ User.register = function register(req) {
 };
 
 /** Insert query for new user creation process
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object parameters]
  * @return {Object} promise 
  */
-User.insertUserQuery = function insertUserQuery(req) {
+User.insertUserQuery = function insertUserQuery(opts) {
     var db = nconf.get('db_users');
     var today = new Date();
     var users= {
-        "first_name":req.body.first_name,
-        "last_name":req.body.last_name,
-        "username":req.body.username,
-        "email":req.body.email,
-        "password":req.body.password,
+        "first_name":opts.first_name,
+        "last_name":opts.last_name,
+        "username":opts.username,
+        "email":opts.email,
+        "password":opts.password,
         "created":today,
         "modified":today
     }
@@ -80,14 +80,14 @@ User.insertUserQuery = function insertUserQuery(req) {
 }
 
 /** Query method to find a user by username
- * @param  {Object} req [API request object]
+ * @param  {Object} opts [API request object parameters]
  * @return {Object} promise 
  */
-User.findByUsername = function findByUsername(req) {
+User.findByUsername = function findByUsername(opts) {
     var db = nconf.get('db_users');
     var userObj = {
-        username: req.body.username,
-        password: req.body.password
+        username: opts.username,
+        password: opts.password
     }
 
     return Promise.using(getSqlConnection(), function(connection) {

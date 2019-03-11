@@ -16,7 +16,13 @@ let controller = {
             });
         }
 
-        return Program.getAllPrograms(req).then(function(response) {
+        var opts = {
+            userId: req.session.userId,
+            program_startdate: req.query.program_startdate,
+            program_enddate: req.query.program_enddate,
+        }
+
+        return Program.getAllPrograms(opts).then(function(response) {
             res.render('dashboard', {listing: response.data});
         }).catch(function(err) {
             res.send(err);
@@ -43,7 +49,12 @@ let controller = {
             });
         }
 
-        return Program.getProgram(req).then(function(response) {
+        var opts = {
+            userId: req.session.userId,
+            programName: req.params.programName
+        }
+        
+        return Program.getProgram(opts).then(function(response) {
             res.json(response.data);
         }).catch(function(err) {
             res.send(err);
@@ -78,7 +89,15 @@ let controller = {
             });
         }
         
-        return Program.create(req).then(function(response) {
+        var opts = {
+            userId: req.session.userId,
+            program_name: req.body.program_name,
+            program_desc: req.body.program_desc,
+            program_startDate: req.body.program_startDate,
+            program_endDate: req.body.program_endDate,
+        }
+
+        return Program.create(opts).then(function(response) {
             return res.json(response);
         }).catch(function(err) {
             return res.json(err);
@@ -100,14 +119,23 @@ let controller = {
             });
         }
 
-        if(!opts.program_name || !opts.program_desc || !opts.program_startDate || !opts.program_endDate) {
+        if(!opts.program_name || !opts.program_desc || !opts.program_startDate || !opts.program_endDate || !opts.p_id) {
             return res.send({
                 success: false,
                 msg: 'Invalid input parameter'
             });
         } 
 
-        return Program.updateProgram(req)
+        var params = {
+            userId: req.session.userId,
+            program_name: opts.program_name,
+            program_desc: opts.program_desc,
+            program_startDate: opts.program_startDate,
+            program_endDate: opts.program_endDate,
+            p_id: opts.p_id,
+        }
+
+        return Program.updateProgram(params)
             .then(function(response) {
                 return res.send(201, response);
             }).catch(function(err) {
@@ -136,7 +164,12 @@ let controller = {
             });
         }
 
-        return Program.setInactive(req).then(function(response) {
+        var params = {
+            userId: req.session.userId,
+            program_name: opts.program_name
+        }
+
+        return Program.setInactive(params).then(function(response) {
             return res.send(201, response);
         }).catch(function(err) {
             return res.send(500, err);
