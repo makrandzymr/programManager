@@ -23,8 +23,8 @@ $(".loginSubmit").click(function() {
         url: '/users/login/',
         method: 'post',
         data: {
-            username: 'mac',
-            password: '111111'
+            username: $('#username').val(),
+            password: $('#password').val()
         },
         success: function(data) {
             if(data && data.status == 200 && data.success == true) {
