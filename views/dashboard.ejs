@@ -1,0 +1,313 @@
+<!-- views/pages/index.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <% include ../views/head %>
+    <link href="../jquery-ui/jquery-ui.css" rel="stylesheet">
+    <script src="../jquery-ui/external/jquery/jquery.js"></script>
+    <script src="../jquery-ui/jquery-ui.js"></script>
+    <script src="../jquery-ui/jquery-ui.css"></script>
+
+    <style>
+    .listStyle {
+        font-size: 14px;
+    }
+    .dnone {
+        display: none;
+    }
+    </style>
+<head>
+<body class="container">
+
+<header>
+    <% include ../views/header %>
+</header>
+
+<main>
+    <div class="jumbotron">
+        
+        <form id="fetchListingFrm" method="GET" action="/programs/">
+            <p>Select Start & End dates or Fetch all using the button below: </p>
+            <input type="text" name="program_startdate" id='programStartdate'>
+            <input type="text" name="program_enddate" id='programEnddate'>
+
+            <span id="datepickerFromDate"></span>
+            <span id="datepickerToDate"></span>
+            <button id="fetch-programs">Fetch Programs</button>
+        </form>
+
+    </div>
+    <div class="ui-widget dnone" id="info-box">
+        <div class="ui-state-highlight ui-corner-all" style="margin-top: 20px; padding: 0 .7em;">
+            <p><span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em;"></span>
+            <strong>Info:</strong> <span class="info-msg"></span></p>
+        </div>
+    </div>
+    <br>
+    <div class="ui-widget dnone" id="error-box">
+        <div class="ui-state-error ui-corner-all" style="padding: 0 .7em;">
+            <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
+            <strong>Alert:</strong> <span class="error-msg"></span></p>
+        </div>
+    </div>
+
+    <% if (locals.listing) { %>
+        <div class="jumbotron">
+        <% listing.forEach(function(item) { %>
+            <li class="listStyle">
+                <span id="programName"><%= item.program_name %></span> | 
+                <span><%= item.program_desc %></span> |  
+                <span><%= new Date(item.program_startdate*1000) %></span>
+                <span class="glyphicon glyphicon-pencil update-program"></span>
+                <span class="glyphicon glyphicon-remove delete-program" ></span>
+            </li>
+        <% }); %>
+         </div>
+    <% } %>
+    <div id="delete-program-dialog" title="Dialog Title">
+            <p>Do you wish to Delete this program?</p>
+    </div>
+
+    <div id="dialog-form" title="Update Program">
+        <p class="validateTips">All form fields are required.</p>
+        
+        <form id="update-program-dialog-frm">
+            <fieldset>
+            <label for="name">Program Name</label>
+            <input type="text" name="pname" id="pname" disabled value="" class="text ui-widget-content ui-corner-all"><br/>
+            
+            <label for="pdesc">Program Description</label>
+            <input type="text" name="pdesc" id="pdesc" value="" class="text ui-widget-content ui-corner-all"><br/>
+            
+            <label for="pstart">Start Date</label>
+            <input type="text" name="pstart" id="pstart" value="" class="text ui-widget-content ui-corner-all"><br/>
+            
+            <label for="pend">End Date</label>
+            <input type="text" name="pend" id="pend" value="" class="text ui-widget-content ui-corner-all"><br/>
+        
+            <input type="hidden" name="pid" id="pid"/>
+            <!-- Allow form submission with keyboard without duplicating the dialog button -->
+            <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+            </fieldset>
+        </form>
+    </div>
+    
+    <div id="create-new-program-dialog" title="Create Program">
+        <p class="validateTips">All form fields are required.</p>
+        
+        <form id="create-program-dialog-frm">
+            <fieldset>
+            <label for="name">Program Name</label>
+            <input type="text" name="programName" id="programName"  value="" class="text ui-widget-content ui-corner-all"><br/>
+            
+            <label for="pdesc">Program Description</label>
+            <input type="text" name="programDesc" id="programDesc" value="" class="text ui-widget-content ui-corner-all"><br/>
+            
+            <label for="pstart">Start Date</label>
+            <input type="text" name="programStart" id="programStart" value="" class="text ui-widget-content ui-corner-all"><br/>
+            
+            <label for="pend">End Date</label>
+            <input type="text" name="programEnd" id="programEnd" value="" class="text ui-widget-content ui-corner-all"><br/>
+        
+
+            <!-- Allow form submission with keyboard without duplicating the dialog button -->
+            <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+            </fieldset>
+        </form>
+    </div>
+</main>
+
+<footer>
+    <% include ../views/footer %>
+</footer>
+
+</body>
+</html>
+
+<script>
+    
+    $(document).ready(function() {
+
+        // Update Program Dialog
+        var dialog = $( "#dialog-form" ).dialog({
+            autoOpen: false,
+            height: 400,
+            width: 550,
+            modal: true,
+            buttons: {
+                Update: function() {
+                    $.ajax({
+                        url:"/programs",
+                        method: 'PUT',
+                        data: {
+                                program_name: $('#update-program-dialog-frm #pname').val(),
+                                program_desc: $('#update-program-dialog-frm #pdesc').val(),
+                                program_startDate: new Date($('#update-program-dialog-frm #pstart').val()).getTime()/1000,
+                                program_endDate: new Date($('#update-program-dialog-frm #pend').val()).getTime()/1000,
+                                p_id: $('#update-program-dialog-frm #pid').val(),
+                            }
+                        })
+                        .done(function( data ) {
+                            dialog.dialog( "close" );
+                            window.location.reload();
+                        });
+                },
+                Cancel: function() {
+                    dialog.dialog( "close" );
+                }
+            },
+            close: function() {
+                dialog.dialog( "close" );
+            }
+        });
+
+        $('#programStartdate').datepicker();
+        $('#programEnddate').datepicker();
+        $('#programStart').datepicker();
+        $('#programEnd').datepicker();
+        $("#pstart").datepicker();
+        $("#pend").datepicker();
+
+        $('#programStartdate').click(function(){
+            $('#programStartdate').datepicker('show');
+        });
+        $('#programEnddate').click(function(){
+            $('#programEnddate').datepicker('show');
+        });
+
+        $('#programStart').click(function(){
+            $('#programStart').datepicker('show');
+        });
+
+        $('#programEnd').click(function(){
+            $('#programEnd').datepicker('show');
+        });
+
+        $("#pstart").click(function() {
+            $("#pstart").datepicker();
+        });
+        
+        $("#pend").click(function() {
+            $("#pend").datepicker();
+        });
+
+        $( ".delete-program" ).click(function( event ) {
+            var parentName = $(this).parent().find('#programName').text();
+            $( "#delete-program-dialog" ).data('parentName', parentName).dialog( "open" );
+            event.preventDefault();
+        });
+
+        $(".update-program").click(function(event) {
+            var parentName = $(this).parent().find('#programName').text();
+
+            $.ajax({
+                url: '/programs/' + parentName,
+                method: 'GET',
+            })
+            .done(function( data ) {
+                $('#update-program-dialog-frm #pname').val(data[0].program_name);
+                $('#update-program-dialog-frm #pdesc').val(data[0].program_desc);
+                
+                var ts_start = data[0].program_enddate;
+                var d_start = new Date(ts_start*1000);
+                var startDate = d_start.getMonth() + 1 + '/' + d_start.getDate() + '/' + d_start.getFullYear(); 
+                var ts_end = data[0].program_enddate;
+                var d_end = new Date(ts_end*1000);
+                var endDate = d_end.getMonth() + 1 + '/' + d_end.getDate() + '/' + d_end.getFullYear(); 
+
+                $("#pstart").datepicker( "setDate" , startDate );
+                $("#pend").datepicker( "setDate" , endDate );
+
+                $('#update-program-dialog-frm #pstart').val(startDate);
+                $('#update-program-dialog-frm #pend').val(endDate);
+                $('#update-program-dialog-frm #pid').val(data[0].p_id);
+                dialog.dialog( "open" );
+            });
+            
+        });
+
+        $(".add-new-program").bind("click", (function(e) {
+            e.stopPropagation();
+            createDialog.dialog( "open" );
+
+        }));
+
+        var createDialog = $( "#create-new-program-dialog" ).dialog({
+            autoOpen: false,
+            width: 400,
+            buttons: [
+                {
+                    "text": "Create",
+                    click: function() {
+                        $.ajax({
+                            url: '/programs',
+                            method: 'POST',
+                            data: {
+                                program_name: $("#create-program-dialog-frm").find('#programName').val(),
+                                program_desc: $("#create-program-dialog-frm").find('#programDesc').val(),
+                                program_startDate: new Date($('#create-program-dialog-frm #programStart').val()).getTime()/1000,
+                                program_endDate: new Date($('#create-program-dialog-frm #programEnd').val()).getTime()/1000,
+                            }
+                        })
+                        .success(function( response ) {
+                            if(response && Object.keys(response).length === 0 && response.constructor === Object) {
+                                $(".error-msg").text('Record already exists');
+                                $("#error-box").removeClass('dnone');
+                                setTimeout(function() {
+                                    $("#error-box").addClass('dnone');
+                                }, 3000)
+                                return;
+                            }
+
+                            $(".info-msg").text('Program created');
+                                $("#info-box").removeClass('dnone');
+                                setTimeout(function() {
+                                    $("#info-box").addClass('dnone');
+                                    $("#fetch-programs").trigger("click");
+                                }, 3000)
+                        });
+                            
+                        $( this ).dialog( "close" );
+                    }
+                },
+                {
+                    text: "No",
+                    click: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            ]
+        });
+
+        $( "#delete-program-dialog" ).dialog({
+            autoOpen: false,
+            width: 400,
+            buttons: [
+                {
+                    text: "Yes",
+                    click: function() {
+                        $.ajax({
+                            url: '/programs',
+                            method: 'DELETE',
+                            data: {
+                                program_name: $("#delete-program-dialog").data('parentName')
+                            }
+                        })
+                        .done(function( data ) {
+                            window.location.reload();
+                        });
+                            
+                        $( this ).dialog( "close" );
+                    }
+                },
+                {
+                    text: "No",
+                    click: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            ]
+        });
+    });
+</script>
