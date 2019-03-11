@@ -16,16 +16,23 @@ let controller = {
                 msg: 'invalid credentials'
             });
         }
+
+        if(req.session.userId) {
+            res.redirect('/users/dashboard');
+        }
         
         return User.login(opts).then(function(response) {
             req.session.userId = response.id;
-            return res.render('dashboard', {response: response});
+            res.json(response);
         }).catch(function(err) {
             return res.send(err);
         });
         
     },
 
+    getDashboard:  function(req, res) {
+        return res.render('dashboard');
+    },
     /** Method to register a user
      * @param  {Object} req [API request object]
      * @param  {Object} res [API response object]

@@ -8,7 +8,7 @@
                 <input type = "text" id="username" name="username"> <br/>
                 <label>Password:</label>
                 <input type = "password" id="password" name="password"> <br/><br/>
-                <button style= "margin-left: 20%">Login</button>
+                <button class="loginSubmit" style= "margin-left: 20%">Login</button>
             </form>
 
         </div>
@@ -16,3 +16,23 @@
     </div>
 </nav>
     
+<script type ="text/javascript">
+
+$(".loginSubmit").click(function() {
+    $.ajax({
+        url: '/users/login/',
+        method: 'post',
+        data: {
+            username: 'mac',
+            password: '111111'
+        },
+        success: function(data) {
+            if(data && data.status == 200 && data.success == true) {
+                location.href = "/users/dashboard";
+            } else {
+                location.href = "/users/login";
+            }
+        }
+    })
+})
+</script>
