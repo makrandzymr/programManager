@@ -50,7 +50,7 @@ Program.getProgram = function getProgram(opts) {
 
             var response = {
                 success: true,
-                msg: 'programs found',
+                msg: 'program found',
                 data: rows
             };
             return Promise.resolve(response);
@@ -184,6 +184,8 @@ Program.findProgramExists = function findProgramExists(program_name) {
             .then(function(records) {
                 if(records.length > 0) {
                     var err = new Error('Record already exists');
+                    err.status = 400;
+                    err.msg = 'Record already exists';
                     throw err;
                 } else {
                     return Promise.resolve(records);
@@ -213,6 +215,8 @@ Program.findProgramForDeletion = function findProgramForDeletion(program_name) {
                     return Promise.resolve(records);
                 } else {
                     var err = new Error('Record doesn\'t exists');
+                    err.status = 400;
+                    err.msg = 'record not found';
                     throw err;
                 }
             })
