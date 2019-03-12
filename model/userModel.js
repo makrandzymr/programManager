@@ -1,8 +1,37 @@
 'user strict';
-var getSqlConnection = require('../config/database');
 var Promise = require("bluebird");
-var nconf = require('nconf');
-nconf.set('db_users', 'users');
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('mysql://root:password@localhost:3306/programs');
+
+const UserSchema = sequelize.define('users', {
+    id: {
+      type: Sequelize.INTEGER,
+      primaryKey: true,
+    },
+    username: {
+      type: Sequelize.STRING
+    },
+    first_name: {
+        type: Sequelize.STRING
+    },
+    last_name: {
+      type: Sequelize.STRING
+    },
+    email: {
+      type: Sequelize.STRING
+    },
+    password: {
+      type: Sequelize.STRING
+    },
+    created: {
+      type: Sequelize.DATE
+    },
+    modified: {
+      type: Sequelize.DATE
+    },
+  },
+  { timestamps: false  }
+);
 
 //User object constructor
 var User = function(user){
@@ -57,9 +86,8 @@ User.register = function register(opts) {
  * @return {Object} promise 
  */
 User.insertUserQuery = function insertUserQuery(opts) {
-    var db = nconf.get('db_users');
     var today = new Date();
-    var users= {
+    var dbInsert = {
         "first_name":opts.first_name,
         "last_name":opts.last_name,
         "username":opts.username,
@@ -69,14 +97,12 @@ User.insertUserQuery = function insertUserQuery(opts) {
         "modified":today
     }
 
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `INSERT INTO ${db} SET ?`, users).then(function(rows) {
+    UserSchema.create(dbInsert)
+        .then(function(rows) {
             return Promise.resolve(rows);
         }).catch(function(error) {
             return Promise.reject(error);
         });
-    });
 }
 
 /** Query method to find a user by username
@@ -84,26 +110,22 @@ User.insertUserQuery = function insertUserQuery(opts) {
  * @return {Object} promise 
  */
 User.findByUsername = function findByUsername(opts) {
-    var db = nconf.get('db_users');
     var userObj = {
-        username: opts.username,
-        password: opts.password
+        username: opts.username
     }
 
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `SELECT id, username, first_name, last_name, password FROM users WHERE username = "${userObj.username}"`)
-            .then(function(rows) {
-                if(rows.length > 0) {
-                    return Promise.resolve(rows[0]);
-                } else {
-                    var err = new Error('User not found');
-                    err.status = 400;
-                    throw err;
-                }
-            }).catch(function(error) {
-                return Promise.reject(error);
-            });
+    return UserSchema.findOne({
+        where: userObj
+    }).then(function(rows) {
+        if(rows != null) {
+            return Promise.resolve(rows);
+        } else {
+            var err = new Error('User not found');
+            err.status = 400;
+            throw err;
+        }
+    }).catch(function(error) {
+        return Promise.reject(error);
     });
 }
 
