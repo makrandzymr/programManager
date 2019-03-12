@@ -1,14 +1,41 @@
-'user strict';
-var getSqlConnection = require('../config/database');
+'use strict';
 var Promise = require("bluebird");
-var nconf = require('nconf');
-nconf.set('db_program_details', 'program_details');
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('mysql://root:password@localhost:3306/programs');
 
 //Program object constructor
 var Program = function(program){
     this.created_at = new Date();
 };
 
+const ProgramSchema = sequelize.define('program_details', {
+    p_id: {
+      type: Sequelize.INTEGER,
+      primaryKey: true,
+    },
+    u_id: {
+      type: Sequelize.INTEGER
+    },
+    program_name: {
+      type: Sequelize.STRING
+    },
+    program_desc: {
+      type: Sequelize.STRING
+    },
+    is_active: {
+      type: Sequelize.INTEGER
+    },
+    program_startdate: {
+      type: Sequelize.BIGINT
+    },
+    program_enddate: {
+      type: Sequelize.BIGINT
+    },
+  },
+  { timestamps: false  }
+);
+
+  
 /**
  * @param  {Object} opts [API request object params]
  * @return {Object} promise [JSON with success, msg & data]
@@ -87,7 +114,7 @@ Program.updateProgram = function updateProgram(opts) {
  */
 Program.create = function create(opts) {
     return Program.findProgramExists(opts.program_name)
-        .then(function(rows) {
+        .then(function() {
             return Program.createProgramQuery(opts);
         }).catch(function(err) {
             return Promise.reject(err);
@@ -100,7 +127,7 @@ Program.create = function create(opts) {
  */
 Program.setInactive = function setInactive(opts) {
     return Program.findProgramForDeletion(opts.program_name)
-        .then(function(rows) {
+        .then(function() {
             return Program.deleteProgramQuery(opts)
         }).catch(function(err) {
             return Promise.reject(err);
@@ -113,33 +140,34 @@ Program.setInactive = function setInactive(opts) {
  */
 Program.getProgramsQuery = function getProgramsQuery(opts) {
     var userId = opts.userId,
-        query,
-        db = nconf.get('db_program_details'),
         dbWhere = {
             u_id : userId,
             is_active : 1
         };
 
-        
     if(opts.program_startdate && opts.program_enddate) {
-        dbWhere.program_startDate=  Math.floor(new Date(opts.program_startdate).getTime() / 1000);
-        dbWhere.program_endDate= Math.floor(new Date(opts.program_enddate).getTime() / 1000);
-
-        query = `select p_id, program_name, program_desc, is_active, program_startdate, program_enddate, u_id
-        from ${db} where u_id = ${dbWhere.u_id} AND is_active = ${dbWhere.is_active} 
-        AND program_startDate BETWEEN ${dbWhere.program_startDate} AND ${dbWhere.program_endDate} 
-        AND program_endDate BETWEEN ${dbWhere.program_startDate} AND ${dbWhere.program_endDate}`;
-    } else {
-        query = `select p_id, program_name, program_desc, is_active, program_startdate, program_enddate, u_id
-        from ${db} where u_id = ${dbWhere.u_id} AND is_active = ${dbWhere.is_active}`;
+        var program_startDate=  Math.floor(new Date(opts.program_startdate).getTime() / 1000);
+        var program_endDate= Math.floor(new Date(opts.program_enddate).getTime() / 1000);
+        var dbWhere = {
+            u_id : userId,
+            is_active : 1,
+            program_startDate: {
+                $between: [program_startDate, program_endDate]
+            },
+            program_endDate: {
+                $between: [program_startDate, program_endDate]
+            }
+        };
     }
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(query).then(function(rows) {
-            return Promise.resolve(rows);
-        }).catch(function(e) {
-            return Promise.reject(e);
-        });
-    });    
+
+    return ProgramSchema.findAll({
+        where: dbWhere
+    })
+    .then(rows => {
+        return Promise.resolve(rows);
+    }).catch(function(e) {
+        return Promise.reject(e);
+    });
 }
 
 
@@ -148,24 +176,23 @@ Program.getProgramsQuery = function getProgramsQuery(opts) {
  * @return {Object} promise 
  */
 Program.getProgramDetails = function getProgramDetails(opts) {
-    var userId = opts.userId;
-    var db = nconf.get('db_program_details');
-    var dbWhere = {
-        u_id : userId,
-        is_active : 1,
-        program_name : opts.program_name,
-    }
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `select p_id, program_name, program_desc, is_active, program_startdate, program_enddate, u_id
-            from ${db} where u_id = ${dbWhere.u_id} AND is_active = ${dbWhere.is_active} AND program_name = "${dbWhere.program_name}"`)
-            .then(function(rows) {
-                return Promise.resolve(rows);
-            })
-            .catch(function(e) {
-                return Promise.reject(e);
-            });  
-    });  
+    var userId = opts.userId,
+        dbWhere = {
+            u_id : userId,
+            is_active : 1,
+            program_name : opts.program_name,
+        }
+
+    return ProgramSchema.findOne({
+        where: dbWhere
+    })
+    .then(function(rows) {
+        return Promise.resolve(rows);
+    })
+    .catch(function(e) {
+        return Promise.reject(e);
+    }); 
+
 }
 
 /** Query method to check if program exists
@@ -173,27 +200,25 @@ Program.getProgramDetails = function getProgramDetails(opts) {
  * @return {Object} promise
  */
 Program.findProgramExists = function findProgramExists(program_name) {
-    var db = nconf.get('db_program_details'),
-        dbWhere = {
-            program_name : program_name,
+    var dbWhere = {
+            program_name : program_name
         };
     
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `SELECT program_name FROM ${db} WHERE ?`, dbWhere)
-            .then(function(records) {
-                if(records.length > 0) {
-                    var err = new Error('Record already exists');
-                    err.status = 400;
-                    err.msg = 'Record already exists';
-                    throw err;
-                } else {
-                    return Promise.resolve(records);
-                }
-            })
-            .catch(function(e) {
-                return Promise.reject(e);
-            });
+    return ProgramSchema.count({
+        where: dbWhere
+    })
+    .then(function(rowCount) {
+        if(rowCount != 0) {
+            var err = new Error('Record already exists');
+            err.status = 400;
+            err.msg = 'Record already exists';
+            throw err;
+        } else {
+            return Promise.resolve(true);
+        }
+    })
+    .catch(function(e) {
+        return Promise.reject(e);
     });
 }
 
@@ -202,27 +227,25 @@ Program.findProgramExists = function findProgramExists(program_name) {
  * @return {Object} promise 
  */
 Program.findProgramForDeletion = function findProgramForDeletion(program_name) {
-    var db = nconf.get('db_program_details'),
-        dbWhere = {
-            program_name : program_name,
-        };
-    
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `SELECT program_name FROM ${db} WHERE ?`, dbWhere)
-            .then(function(records) {
-                if(records.length > 0) {
-                    return Promise.resolve(records);
-                } else {
-                    var err = new Error('Record doesn\'t exists');
-                    err.status = 400;
-                    err.msg = 'record not found';
-                    throw err;
-                }
-            })
-            .catch(function(e) {
-                return Promise.reject(e);
-            });
+    var dbWhere = {
+        program_name : program_name
+    };
+
+    return ProgramSchema.count({
+        where: dbWhere
+    })
+    .then(function(rowCount) {
+        if(rowCount != 0) {
+            return Promise.resolve(true);
+        } else {
+            var err = new Error('Record doesn\'t exists');
+            err.status = 400;
+            err.msg = 'record not found';
+            throw err;
+        }
+    })
+    .catch(function(e) {
+        return Promise.reject(e);
     });
 }
 
@@ -231,7 +254,6 @@ Program.findProgramForDeletion = function findProgramForDeletion(program_name) {
  * @return {Object} promise 
  */
 Program.createProgramQuery = function createProgramQuery(opts) {
-    var db = nconf.get('db_program_details');
     var dbInsert = {
         program_name: opts.program_name,
         program_desc: opts.program_desc,
@@ -241,14 +263,12 @@ Program.createProgramQuery = function createProgramQuery(opts) {
         u_id: opts.userId,
     };
 
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(`INSERT into ${db} SET ?`, dbInsert)
-            .then(function(rows) {
-                return Promise.resolve(rows);
-            }).catch(function(err) {
-                return Promise.resolve(err);
-            });
-    });
+    return ProgramSchema.create(dbInsert)
+        .then(function(rows) {
+            return Promise.resolve(rows);
+        }).catch(function(err) {
+            return Promise.resolve(err);
+        });
 }
 
 /** Query method to set programs as inactive
@@ -256,26 +276,21 @@ Program.createProgramQuery = function createProgramQuery(opts) {
  * @return {Object} promise 
  */
 Program.deleteProgramQuery = function deleteProgramQuery(opts) {
-    var db = nconf.get('db_program_details');
     var dbSet = {
         is_active : 0
-    };
-
-    var dbWhere = {
+    }, dbWhere = {
         u_id: opts.userId,
         program_name: opts.program_name
     }
 
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `UPDATE ${db} SET is_active = ${dbSet.is_active} 
-            WHERE program_name = "${dbWhere.program_name}" AND u_id = ${dbWhere.u_id}`)
-            .then(function(rows) {
-                return Promise.resolve(rows);
-            })
-            .catch(function(e) {
-                return Promise.reject(e);
-            });
+    return ProgramSchema.update(dbSet, {
+        where: dbWhere
+    })
+    .then(function(rows) {
+        return Promise.resolve(rows);
+    })
+    .catch(function(e) {
+        return Promise.reject(e);
     });
 }
 
@@ -284,32 +299,24 @@ Program.deleteProgramQuery = function deleteProgramQuery(opts) {
  * @return {Object} promise 
  */
 Program.updateProgramQuery = function updateProgramQuery(opts) {
-    var db = nconf.get('db_program_details');
     var dbSet = {
-        program_name: opts.program_name,
         program_desc: opts.program_desc,
         program_startdate: opts.program_startDate,
         program_enddate: opts.program_endDate
-    };
-
-    var dbWhere = {
+    }, dbWhere = {
         u_id: opts.userId,
         p_id: opts.p_id,
     }
     
-    return Promise.using(getSqlConnection(), function(connection) {
-        return connection.query(
-            `UPDATE ${db} SET program_desc = "${dbSet.program_desc}",
-            program_startdate = "${dbSet.program_startdate}",  program_enddate = "${dbSet.program_enddate}"
-        
-            WHERE p_id = ${dbWhere.p_id} AND u_id = ${dbWhere.u_id}`)
-            .then(function(rows) {
-                return Promise.resolve(rows);
-            })
-            .catch(function(e) {
-                return Promise.reject(e);
-            })
-    });
+    return ProgramSchema.update(dbSet, {
+        where: dbWhere
+    })
+    .then(function(rows) {
+        return Promise.resolve(rows);
+    })
+    .catch(function(e) {
+        return Promise.reject(e);
+    }); 
 }
 
 module.exports= Program;

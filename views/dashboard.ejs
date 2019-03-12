@@ -206,13 +206,13 @@
                 method: 'GET',
             })
             .done(function( data ) {
-                $('#update-program-dialog-frm #pname').val(data[0].program_name);
-                $('#update-program-dialog-frm #pdesc').val(data[0].program_desc);
+                $('#update-program-dialog-frm #pname').val(data.program_name);
+                $('#update-program-dialog-frm #pdesc').val(data.program_desc);
                 
-                var ts_start = data[0].program_enddate;
+                var ts_start = data.program_enddate;
                 var d_start = new Date(ts_start*1000);
                 var startDate = d_start.getMonth() + 1 + '/' + d_start.getDate() + '/' + d_start.getFullYear(); 
-                var ts_end = data[0].program_enddate;
+                var ts_end = data.program_enddate;
                 var d_end = new Date(ts_end*1000);
                 var endDate = d_end.getMonth() + 1 + '/' + d_end.getDate() + '/' + d_end.getFullYear(); 
 
@@ -221,7 +221,7 @@
 
                 $('#update-program-dialog-frm #pstart').val(startDate);
                 $('#update-program-dialog-frm #pend').val(endDate);
-                $('#update-program-dialog-frm #pid').val(data[0].p_id);
+                $('#update-program-dialog-frm #pid').val(data.p_id);
                 dialog.dialog( "open" );
             });
             
@@ -251,21 +251,22 @@
                             }
                         })
                         .success(function( response ) {
-                            if(response && Object.keys(response).length === 0 && response.constructor === Object) {
+                            if(response && response.status == 400) {
                                 $(".error-msg").text('Record already exists');
                                 $("#error-box").removeClass('dnone');
                                 setTimeout(function() {
                                     $("#error-box").addClass('dnone');
-                                }, 3000)
-                                return;
-                            }
+                                    $("#fetch-programs").trigger("click");
 
-                            $(".info-msg").text('Program created');
+                                }, 4000)
+                            } else {
+                                $(".info-msg").text('Program created');
                                 $("#info-box").removeClass('dnone');
                                 setTimeout(function() {
                                     $("#info-box").addClass('dnone');
                                     $("#fetch-programs").trigger("click");
-                                }, 3000)
+                                }, 4000)
+                            }
                         });
                             
                         $( this ).dialog( "close" );
