@@ -20,18 +20,20 @@ describe('Programs', function () {
         commonObj.name = opts.program_name;
 
         it('should be able to create a program successfully', function () {
-            return createProgram(opts).then(function(result) {
-                expect(result.affectedRows).to.equal(1);
-            });
+            return createProgram(opts)
+                .then(function(result) {
+                    expect(result.affectedRows).to.not.equal(null);
+                });
         });
 
         it('should not be able to create a duplicate program', function () {
-            return createProgram(opts).then(function(result) {
+            return createProgram(opts)
+                .then(function(result) {
 
-            }).catch(function(err) {
-                expect(err.status).to.equal(400);
-                expect(err.msg).to.equal('Record already exists');
-            })
+                }).catch(function(err) {
+                    expect(err.status).to.equal(400);
+                    expect(err.msg).to.equal('Record already exists');
+                })
         });        
     });
 
@@ -40,31 +42,35 @@ describe('Programs', function () {
         var opts = {
             userId: 1
         }
+
         it('should fetch all programs when start and end date not specified', function () {
-            return  getAllPrograms(opts).then(function(result) {
-                expect(result.success).to.equal(true);
-                expect(result.msg).to.equal('programs found');
-                expect(result.data.length).to.greaterThan(0);
-            });
+            return getAllPrograms(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(true);
+                    expect(result.msg).to.equal('programs found');
+                    expect(result.data.length).to.greaterThan(0);
+                });
         });
 
         it('should fetch specific programs when start and end date are specified', function () {
             opts.program_startdate =  '12/01/2025';
             opts.program_enddate =  '01/01/2026';
-            return  getAllPrograms(opts).then(function(result) {
-                expect(result.success).to.equal(true);
-                expect(result.msg).to.equal('programs found');
-                expect(result.data.length).to.greaterThan(0);
-            });
+            return getAllPrograms(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(true);
+                    expect(result.msg).to.equal('programs found');
+                    expect(result.data.length).to.greaterThan(0);
+                });
         });
 
         it('should not fetch programs when start and end date are specified and programs don\'t exist', function () {
             opts.program_startdate =  '03/04/2020';
             opts.program_enddate =  '03/09/2025';
-            return  getAllPrograms(opts).then(function(result) {
-                expect(result.success).to.equal(true);
-                expect(result.msg).to.equal('No programs found');
-            });
+            return getAllPrograms(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(true);
+                    expect(result.msg).to.equal('No programs found');
+                });
         });
     });
 
@@ -75,20 +81,24 @@ describe('Programs', function () {
         }
 
         it('should fetch details of a single program', function () {
-            return getProgram(opts).then(function(result) {
-                expect(result.success).to.equal(true);
-                expect(result.msg).to.equal('program found');
-                expect(result.data.length).to.equal(1);
-                expect(result.data[0].program_name).to.equal(commonObj.name);
-            });
+            return getProgram(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(true);
+                    expect(result.msg).to.equal('program found');
+                    expect(result.data).to.not.equal(null);
+                    expect(result.data.program_name).to.equal(commonObj.name);
+                });
         });
 
         it('should not fetch details of a program which does not exists', function () {
             opts.program_name = "this does not exists";
-            return getProgram(opts).then(function(result) {
-                expect(result.success).to.equal(true);
-                expect(result.msg).to.equal('No programs found');
-            });
+            return getProgram(opts)
+                .then(function(result) {
+
+                }).catch(function(err) {
+                    expect(err.success).to.equal(true);
+                    expect(err.msg).to.equal('No programs found');
+                });
         });
     });
 
@@ -99,9 +109,11 @@ describe('Programs', function () {
                 userId: 1,
                 program_name: commonObj.name
             }
-            return deleteProgram(opts).then(function(result) {
-                expect(result.affectedRows).to.equal(1);
-            });
+            return deleteProgram(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(true);
+                    expect(result.msg).to.equal('program deleted successfully');
+                });
         });
 
         it('should not be able to set an unexisting program as inactive', function () {
@@ -109,15 +121,13 @@ describe('Programs', function () {
                 userId: 1,
                 program_name:  'this cant be deleted'
             }
-            return deleteProgram(opts).then(function(result) {
-            }).catch(function(err) {
-                expect(err.status).to.equal(400);
-                expect(err.msg).to.equal('record not found');
-
-            });
-        });
-
-        
+            return deleteProgram(opts)
+                .then(function(result) {
+                }).catch(function(err) {
+                    expect(err.status).to.equal(400);
+                    expect(err.msg).to.equal('record not found');
+                });
+        });        
     });
 
 });
