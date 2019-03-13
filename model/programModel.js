@@ -12,6 +12,7 @@ const ProgramSchema = sequelize.define('program_details', {
     p_id: {
       type: Sequelize.INTEGER,
       primaryKey: true,
+      autoIncrement: true
     },
     u_id: {
       type: Sequelize.INTEGER
@@ -68,8 +69,8 @@ Program.getAllPrograms = function getAllPrograms(opts) {
 Program.getProgram = function getProgram(opts) {
     return Program.getProgramDetails(opts)
         .then(function(rows) {
-            if(rows.length == 0) {
-                return Promise.resolve({
+            if(rows == null) {
+                return Promise.reject({
                     success: true,
                     msg: 'No programs found'
                 });
@@ -129,6 +130,12 @@ Program.setInactive = function setInactive(opts) {
     return Program.findProgramForDeletion(opts.program_name)
         .then(function() {
             return Program.deleteProgramQuery(opts)
+        })
+        .then(function() {
+            return Promise.resolve({
+                success: true,
+                msg: 'program deleted successfully'
+            });
         }).catch(function(err) {
             return Promise.reject(err);
         });

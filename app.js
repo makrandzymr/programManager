@@ -21,10 +21,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
+  name: 'program_sess',
   secret: 'thisisasecret',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 160000 }
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 365
+  }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 

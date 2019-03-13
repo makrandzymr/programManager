@@ -1,7 +1,6 @@
 "use strict";
 
 var Program = require('../model/programModel');
-
 let controller = {
     /** Method to fetch programs created by user
      * @param  {Object} req [API request object]
@@ -55,9 +54,9 @@ let controller = {
         }
         
         return Program.getProgram(opts).then(function(response) {
-            res.json(response.data);
+            return res.json(response.data);
         }).catch(function(err) {
-            res.send(err);
+            return res.send(err);
         });
 
     },
@@ -69,21 +68,21 @@ let controller = {
      */
     addProgram: function (req, res) {
         if(!req.session.userId) {
-            return reject({
+            return res.send({
                 success: false,
                 msg: 'LoggedIn user not found'
             });
         }
 
         if(!req.body.program_name || !req.body.program_desc || !req.body.program_startDate || !req.body.program_endDate) {
-            return reject({
+            return res.send({
                 success: false,
                 msg: 'Invalid input parameter'
             });
         }
 
         if(req.body.program_startDate > req.body.program_endDate) {
-            return reject({
+            return res.send({
                 success: false,
                 msg: 'Invalid Start and End dates'
             });
@@ -100,7 +99,7 @@ let controller = {
         return Program.create(opts).then(function(response) {
             return res.json(response);
         }).catch(function(err) {
-            return res.json(err);
+            return res.send(err);
         });
     },
 
