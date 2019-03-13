@@ -55,6 +55,8 @@ User.login = function login(opts) {
             } else {
                 var err = new Error('User not found');
                 err.status = 400;
+                err.msg = 'user not found';
+                err.success = false;
                 throw err;
             }
         }).catch(function(err) {
@@ -67,18 +69,28 @@ User.login = function login(opts) {
  * @return {Object} promise 
  */
 User.register = function register(opts) {
-    return User.insertUserQuery(opts)
-        .then(function(rows) {
-            var response = {
-                success: true,
-                msg: 'User registered',
-                data: rows
-            };
+    return User.findByUsername(opts)
+    .then(function(response) {
+        if(response.username) {
+            return Promise.reject({
+                status: false,
+                msg: 'username exists'
+            });
+        }
 
-            return Promise.resolve(response);
-        }).catch(function(err) {
-            return Promise.reject(err);
-        });
+        return User.insertUserQuery(opts);
+    })
+    .then(function(rows) {
+        var response = {
+            success: true,
+            msg: 'User registered',
+            data: rows
+        };
+
+        return Promise.resolve(response);
+    }).catch(function(err) {
+        return Promise.reject(err);
+    });
 };
 
 /** Insert query for new user creation process
@@ -97,7 +109,7 @@ User.insertUserQuery = function insertUserQuery(opts) {
         "modified":today
     }
 
-    UserSchema.create(dbInsert)
+    return UserSchema.create(dbInsert)
         .then(function(rows) {
             return Promise.resolve(rows);
         }).catch(function(error) {
@@ -120,9 +132,9 @@ User.findByUsername = function findByUsername(opts) {
         if(rows != null) {
             return Promise.resolve(rows);
         } else {
-            var err = new Error('User not found');
-            err.status = 400;
-            throw err;
+            return Promise.resolve({
+                msg: 'user not found'
+            });
         }
     }).catch(function(error) {
         return Promise.reject(error);

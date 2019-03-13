@@ -42,7 +42,7 @@ let controller = {
         var opts = req.body;
         var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
 
-        if(!opts.first_name || !opts.last_name || !opts.email || !opts.password) {
+        if(!opts.first_name || !opts.last_name || !opts.email || !opts.password || !opts.username) {
             return res.send({
                 success: false,
                 msg: 'invalid input parameters'

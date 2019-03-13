@@ -96,6 +96,13 @@ Program.getProgram = function getProgram(opts) {
 Program.updateProgram = function updateProgram(opts) {
     return Program.updateProgramQuery(opts)
         .then(function(rows) {
+            if(rows == 0) {
+                return ({
+                    success: false,
+                    msg: 'record to update does not exist',
+                });
+            }
+
             return ({
                 success: true,
                 msg: 'Update successful',

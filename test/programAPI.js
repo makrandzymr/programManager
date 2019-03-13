@@ -291,7 +291,6 @@ describe('/PUT Program', () => {
         return agent.put('/programs/')
           .send(programData)
           .then(function (res2) {
-            console.log(res2);
             res2 = JSON.parse(res2.text);
             expect(res2.success).to.equal(false);
             expect(res2.msg).to.equal('Invalid input parameter');

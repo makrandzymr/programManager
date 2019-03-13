@@ -2,6 +2,7 @@ const expect = require('chai').expect;
 const getAllPrograms = require('../model/programModel').getAllPrograms;
 const getProgram = require('../model/programModel').getProgram;
 const createProgram = require('../model/programModel').create;
+const updateProgram = require('../model/programModel').updateProgram;
 const deleteProgram = require('../model/programModel').setInactive;
 
 var commonObj = {};
@@ -10,19 +11,23 @@ describe('Programs', function () {
 
     describe('#create()', function () {
         var random_name = Math.floor(Math.random()*1000);
+        var program_name = 'test-program-model-testing-' + random_name;
         var opts = {
             userId: 1,
-            program_name: 'test-program-model-testing-' + random_name,
-            program_desc: 'test-program-description',
+            program_name: program_name,
+            program_desc: 'test-program,-description',
             program_startDate: 1764527400, // 12/01/2025,
             program_endDate: 1767205800, //01/01/2026
         };
+
         commonObj.name = opts.program_name;
 
         it('should be able to create a program successfully', function () {
             return createProgram(opts)
                 .then(function(result) {
+                    commonObj.p_id = result.p_id;
                     expect(result.affectedRows).to.not.equal(null);
+                    expect(result.program_name).to.equal(program_name);
                 });
         });
 
@@ -100,6 +105,41 @@ describe('Programs', function () {
                     expect(err.msg).to.equal('No programs found');
                 });
         });
+    });
+
+    describe('#updateProgram()', function () {
+        
+        it('should be able to successfully update a program', function () {
+            var opts = {
+                program_name: commonObj.name,
+                program_desc: 'test-program-description',
+                program_startdate: 1764527400,
+                program_enddate: 1767205800,
+                userId: 1,
+                p_id: commonObj.p_id,
+            }
+            return updateProgram(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(true);
+                    expect(result.msg).to.equal('Update successful');
+                });
+        }); 
+        
+        it('should fail to update a program when the program Id doesn\'t exists', function () {
+            var opts = {
+                program_name: commonObj.name,
+                program_desc: 'test-program-description',
+                program_startdate: 1764527400,
+                program_enddate: 1767205800,
+                u_id: 99999,
+                p_id: 999999,
+            }
+            return updateProgram(opts)
+                .then(function(result) {
+                    expect(result.success).to.equal(false);
+                    expect(result.msg).to.equal('record to update does not exist');
+                });
+        }); 
     });
 
     describe('#deleteProgram()', function () {
